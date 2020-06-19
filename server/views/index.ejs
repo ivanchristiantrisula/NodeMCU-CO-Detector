@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CO Monitor</title>
+        <link
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk"
+            crossorigin="anonymous"
+        />
+    </head>
+    <body>
+        <div class="container">
+            <div class="row mt-4">
+                <div class="col text-center">
+                    <p>Current PPM is :</p>
+                    <p><h1 id="ppm"></h1></p>
+                    <p>Last update on <span id="time"></span></p>
+                    <p class="text-muted text-small">
+                        Auto Update every 5 seconds
+                    </p>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="getData()">
+                            Refresh
+                        </button>
+                        <button class="btn btn-warning" onclick="changeState()" id="btnState" value="">
+                            Turn Off
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer fixed-bottom text-center mb-2">
+            CO Detector by Ivan Christian Trisula - 217116608
+        </div>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+            integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+            crossorigin="anonymous"
+        ></script>
+
+        <script>
+            let state;
+            $(document).ready(function () {
+                getData();
+                getState();
+                setInterval(function () {
+                    if($("#btnState").val()==1){
+                        getData();
+                    }
+                    
+                }, 5000);
+            });
+            function getData() {
+                $.ajax({
+                    type: "get",
+                    url: "/api/getData",
+                    success: function (response) {
+                        console.log(response);
+                        $("#ppm").html(response.ppm);
+                        $("#time").html(
+                            new Date(response.time).toLocaleString()
+                        );
+                    },
+                });
+            }
+
+            function getState() {
+                
+                $.ajax({
+                    type: "get",
+                    url: "/api/getState",
+                    success: function (response) {
+                        if(response==0){
+                            $("#btnState").text("Turn On");
+                            $("#ppm").html("OFF");
+                            
+                        }else{
+                            $("#btnState").text("Turn Off");
+                            getData();
+                        }
+
+                        $("#btnState").val(response);
+                    },
+                });
+            }
+
+            function changeState(){
+                let newState;
+                if($("#btnState").val()==0){
+                    newState = 1;
+                }else{
+                    newState = 0;
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: "/api/changeMode",
+                    data : {
+                        "state" : newState,
+                    },
+                    success: function (response) {
+                        getState();
+                    },
+                });
+
+                if(newState==0){
+                    $("#btnState").text("Turn On");
+                
+                }else{
+                    $("#btnState").text("Turn Off");
+                }
+
+                
+            }
+        </script>
+    </body>
+</html>
